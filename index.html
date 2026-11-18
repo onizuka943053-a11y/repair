@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="維修查詢">
+<title>維修查詢</title>
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--tx:#1b1f24;--sub:#6a737d;--line:#e3e6ea;--ac:#2f5496;--acbg:#e8eef9;--chip:#fff2cc;--chiptx:#7a5a00;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121417;--card:#1c2026;--tx:#e8eaed;--sub:#9aa3ad;--line:#2d333b;--ac:#8fb0ee;--acbg:#1f2a40;--chip:#3b3217;--chiptx:#f0d27a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121417;--card:#1c2026;--tx:#e8eaed;--sub:#9aa3ad;--line:#2d333b;--ac:#8fb0ee;--acbg:#1f2a40;--chip:#3b3217;--chiptx:#f0d27a;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 -apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+header{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding:10px 12px 8px;z-index:5}
+.row{display:flex;gap:8px}
+input[type=search]{flex:1;min-width:0;font:inherit;font-size:17px;padding:11px 14px;border:2px solid var(--ac);border-radius:12px;background:var(--card);color:var(--tx);outline:none;-webkit-appearance:none}
+button{font:inherit;font-size:14px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ac);white-space:nowrap}
+#sum{margin:8px 2px 0;font-weight:600;font-size:14px}
+#meta{margin:2px 2px 0;font-size:12px;color:var(--sub)}
+main{padding:4px 12px 40px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:10px 0}
+.nm{font-size:18px;font-weight:700}
+.chips{margin:4px 0 6px;display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;padding:1px 8px;border-radius:99px;background:var(--acbg);color:var(--ac)}
+.chip.s{background:var(--chip);color:var(--chiptx)}
+.kv{font-size:14px;margin:2px 0;word-break:break-word}
+.kv b{color:var(--sub);font-weight:600}
+.recs{margin-top:8px;border-top:1px solid var(--line)}
+.rec{padding:7px 0;border-bottom:1px solid var(--line)}
+.rec:last-child{border-bottom:0}
+.rd{font-weight:600;font-size:15px;word-break:break-word}
+.rc{font-size:14px;color:var(--sub);margin-top:1px;word-break:break-word}
+.rl{font-size:11px;color:var(--sub);opacity:.7}
+.none{color:var(--sub);font-size:14px;padding:8px 0}
+.empty{text-align:center;color:var(--sub);padding:56px 20px}
+.empty .big{font-size:48px}
+.empty button{margin-top:14px;padding:12px 22px;font-size:16px;background:var(--ac);color:var(--bg);border:0;font-weight:600}
+#more{display:block;width:100%;padding:12px;margin:8px 0}
+.tabs{display:flex;gap:6px;margin-top:8px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tabs:empty{display:none}
+.tab{padding:5px 14px;font-size:14px;border-radius:99px;flex:none}
+.tab.sm{padding:3px 10px;font-size:13px}
+.tab.on{background:var(--ac);color:var(--bg);border-color:var(--ac)}
+</style>
+</head>
+<body>
+<header>
+  <div class="row">
+    <input id="q" type="search" placeholder="店名、店號、主機序號…" enterkeyhint="search" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <button id="upd" type="button">更新資料</button>
+  </div>
+  <div id="tabs" class="tabs"></div>
+  <div id="shs" class="tabs"></div>
+  <div id="sum"></div>
+  <div id="meta"></div>
+</header>
+<main id="out"></main>
+<input id="f" type="file" accept=".json,application/json" multiple hidden>
+<script>
+(function(){
+var q=document.getElementById('q'),out=document.getElementById('out'),sum=document.getElementById('sum'),meta=document.getElementById('meta'),f=document.getElementById('f');
+var sets={},all=[],shown=30,matched=[],mem=false,tab='',sh='';
+function lab(k){return /全家/.test(k)?'全家':/統一|7/.test(k)?'7-11':k}
+function drawTabs(){var T=document.getElementById('tabs'),S=document.getElementById('shs');T.textContent='';S.textContent='';
+  if(!all.length)return;
+  var names=[];Object.keys(sets).forEach(function(k){var l=lab(k);if(names.indexOf(l)<0)names.push(l)});
+  ['全部'].concat(names).forEach(function(n){var b=h('button','tab'+((n==='全部'?!tab:tab===n)?' on':''),n);b.onclick=function(){tab=n==='全部'?'':n;sh='';drawTabs();shown=30;render()};T.appendChild(b)});
+  if(tab){var shs=[];all.forEach(function(s){if(lab(s._src)===tab&&shs.indexOf(s.s)<0)shs.push(s.s)});
+    if(shs.length>1)['全部分頁'].concat(shs).forEach(function(n){var b=h('button','tab sm'+((n==='全部分頁'?!sh:sh===n)?' on':''),n);b.onclick=function(){sh=n==='全部分頁'?'':n;drawTabs();shown=30;render()};S.appendChild(b)})}}
+function h(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+function openDB(){return new Promise(function(ok,no){try{var r=indexedDB.open('repair',1);r.onupgradeneeded=function(){r.result.createObjectStore('d',{keyPath:'source'})};r.onsuccess=function(){ok(r.result)};r.onerror=function(){no(r.error)}}catch(e){no(e)}})}
+function loadAll(){return openDB().then(function(db){return new Promise(function(ok,no){var r=db.transaction('d').objectStore('d').getAll();r.onsuccess=function(){ok(r.result)};r.onerror=function(){no(r.error)}})}).catch(function(){mem=true;return []})}
+function save(d){return openDB().then(function(db){return new Promise(function(ok,no){var t=db.transaction('d','readwrite');t.objectStore('d').put(d);t.oncomplete=ok;t.onerror=function(){no(t.error)}})}).catch(function(){mem=true})}
+function build(){
+  all=[];var tags=Object.keys(sets);
+  tags.forEach(function(k){var d=sets[k];d.stores.forEach(function(s){
+    s._src=k;var p=[s.n,s.no,s.ser,s.s];(s.info||[]).forEach(function(i){p.push(i[1])});
+    s._k=p.join(' ').toLowerCase();all.push(s)})});
+  var parts=tags.map(function(k){return lab(k)+' '+sets[k].stores.length.toLocaleString()+' 間店(匯出於 '+(sets[k].exported||'?')+')'});
+  meta.textContent=parts.join(' ・ ')+(mem?' ・ 注意:這個瀏覽器無法保存資料':'');
+  drawTabs();
+}
+function fmt(d){return d.length===7?d.replace('-','/'):d.replace(/-/g,'/')}
+function render(){
+  out.textContent='';
+  if(!all.length){
+    var e=h('div','empty');e.appendChild(h('div','big','📱'));
+    e.appendChild(h('div','','還沒有資料。請先從「檔案」App 選擇電腦匯出的 .json 檔。'));
+    var b=h('button','', '選擇資料檔');b.onclick=function(){f.click()};e.appendChild(b);out.appendChild(e);sum.textContent='';return}
+  var terms=q.value.toLowerCase().split(/\s+/).filter(Boolean);
+  if(!terms.length){matched=[];sum.textContent='請輸入店名、店號或主機序號';return}
+  matched=all.filter(function(s){return (!tab||lab(s._src)===tab)&&(!sh||s.s===sh)&&terms.every(function(t){return s._k.indexOf(t)>=0})});
+  var nr=0,last='';
+  matched.forEach(function(s){(s.rec||[]).forEach(function(r){nr++;if(r[3]&&r[3]>last)last=r[3]})});
+  if(!matched.length){sum.textContent='找不到符合的店鋪';return}
+  sum.textContent=matched.length+' 間店 / '+nr+' 筆維修紀錄'+(last?',最近一次:'+fmt(last):'');
+  matched.slice(0,shown).forEach(function(s){out.appendChild(card(s))});
+  if(matched.length>shown){var m=h('button','','顯示更多('+(matched.length-shown)+' 間)');m.id='more';m.onclick=function(){shown+=30;render()};out.appendChild(m)}
+}
+function card(s){
+  var c=h('div','card');c.appendChild(h('div','nm',s.n));
+  var ch=h('div','chips');ch.appendChild(h('span','chip s',s.s));
+  if(s.no)ch.appendChild(h('span','chip','店號 '+s.no));
+  if(Object.keys(sets).length>1)ch.appendChild(h('span','chip',lab(s._src)));
+  c.appendChild(ch);
+  function kv(l,v){var d=h('div','kv');d.appendChild(h('b','',l+':'));d.appendChild(document.createTextNode(' '+v));c.appendChild(d)}
+  if(s.ser)kv('主機序號',s.ser);
+  (s.info||[]).forEach(function(i){kv(i[0],i[1])});
+  var rs=h('div','recs');
+  if(!(s.rec||[]).length)rs.appendChild(h('div','none','沒有維修紀錄'));
+  (s.rec||[]).forEach(function(r){var d=h('div','rec');
+    if(r[0])d.appendChild(h('div','rd',r[0]));
+    if(r[1])d.appendChild(h('div','rc',r[1]));
+    d.appendChild(h('div','rl',r[2]));rs.appendChild(d)});
+  c.appendChild(rs);return c
+}
+function readFile(file){return file.text().then(function(t){
+  t=t.replace(/^\uFEFF/,'');var d=JSON.parse(t);
+  if(!d||!Array.isArray(d.stores))throw new Error('格式不對');
+  d.source=d.source||file.name;return d})}
+f.onchange=function(){
+  var fs=Array.prototype.slice.call(f.files);if(!fs.length)return;
+  sum.textContent='載入中…';
+  Promise.all(fs.map(function(x){return readFile(x).then(function(d){sets[d.source]=d;return save(d)})}))
+  .then(function(){f.value='';build();shown=30;render();if(!q.value)sum.textContent='資料已更新('+all.length.toLocaleString()+' 間店)'})
+  .catch(function(e){f.value='';sum.textContent='載入失敗:'+(e&&e.message?e.message:'檔案不是正確的資料檔')})};
+document.getElementById('upd').onclick=function(){f.click()};
+var tm;q.oninput=function(){clearTimeout(tm);tm=setTimeout(function(){shown=30;render()},150)};
+loadAll().then(function(l){l.forEach(function(d){sets[d.source]=d});build();render()});
+})();
+</script>
+</body>
+</html>
