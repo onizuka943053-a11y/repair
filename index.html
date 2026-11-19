@@ -23,6 +23,7 @@ button{font:inherit;font-size:14px;padding:0 12px;border:1px solid var(--line);b
 main{padding:4px 12px 40px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:10px 0}
 .nm{font-size:18px;font-weight:700}
+.nm a{color:var(--ac);text-decoration:none}
 .chips{margin:4px 0 6px;display:flex;flex-wrap:wrap;gap:6px}
 .chip{font-size:12px;padding:1px 8px;border-radius:99px;background:var(--acbg);color:var(--ac)}
 .chip.s{background:var(--chip);color:var(--chiptx)}
@@ -100,8 +101,16 @@ function render(){
   matched.slice(0,shown).forEach(function(s){out.appendChild(card(s))});
   if(matched.length>shown){var m=h('button','','顯示更多('+(matched.length-shown)+' 間)');m.id='more';m.onclick=function(){shown+=30;render()};out.appendChild(m)}
 }
+var REG=['高雄','台南','屏東','嘉義','台東','澎湖'];
+function mapQ(s){var ad='';(s.info||[]).forEach(function(i){if(i[0]==='地址')ad=i[1]});
+  var t=lab(s._src);
+  if(ad)return s.n+' '+ad;
+  if(REG.indexOf(s.s)>=0)return (t==='7-11'?'7-ELEVEN '+s.n+'門市 ':t==='全家'?'全家 '+s.n+' ':s.n+' ')+s.s;
+  return s.s+' '+s.n}
 function card(s){
-  var c=h('div','card');c.appendChild(h('div','nm',s.n));
+  var c=h('div','card'),nm=h('div','nm'),a=document.createElement('a');
+  a.href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(mapQ(s));a.target='_blank';a.rel='noopener';a.textContent=s.n+' 📍';
+  nm.appendChild(a);c.appendChild(nm);
   var ch=h('div','chips');ch.appendChild(h('span','chip s',s.s));
   if(s.no)ch.appendChild(h('span','chip','店號 '+s.no));
   if(Object.keys(sets).length>1)ch.appendChild(h('span','chip',lab(s._src)));
