@@ -27,6 +27,7 @@ main{padding:4px 12px 40px}
 .chips{margin:4px 0 6px;display:flex;flex-wrap:wrap;gap:6px}
 .chip{font-size:12px;padding:1px 8px;border-radius:99px;background:var(--acbg);color:var(--ac)}
 .chip.s{background:var(--chip);color:var(--chiptx)}
+.bat{font-size:14px;margin:6px 0;padding:6px 10px;border-radius:10px;background:var(--chip);color:var(--chiptx);font-weight:600;word-break:break-word}
 .kv{font-size:14px;margin:2px 0;word-break:break-word}
 .kv b{color:var(--sub);font-weight:600}
 .recs{margin-top:8px;border-top:1px solid var(--line)}
@@ -57,6 +58,7 @@ main{padding:4px 12px 40px}
   <div id="shs" class="tabs"></div>
   <div id="sum"></div>
   <div id="meta"></div>
+  <div style="font-size:11px;color:var(--sub);margin:2px 2px 0">頁面版本 2026-11-24</div>
 </header>
 <main id="out"></main>
 <input id="f" type="file" accept=".json,application/json" multiple hidden>
@@ -102,6 +104,8 @@ function render(){
   if(matched.length>shown){var m=h('button','','顯示更多('+(matched.length-shown)+' 間)');m.id='more';m.onclick=function(){shown+=30;render()};out.appendChild(m)}
 }
 var REG=['高雄','台南','屏東','嘉義','台東','澎湖'];
+function age(v){var m=/(\d{2,4})\s*[\/.\-年]\s*(\d{1,2})/.exec(v);if(!m)return'';var y=+m[1],mo=+m[2];if(y<1911)y+=1911;if(y<1990||mo<1||mo>12)return'';var n=new Date(),mm=(n.getFullYear()-y)*12+n.getMonth()+1-mo;if(mm<0)return'';var yy=Math.floor(mm/12);return'(距今 '+(yy?yy+' 年 ':'')+(mm%12)+' 個月)'}
+function bat(c,v){c.appendChild(h('div','bat','🔋 上次更換電池:'+v+(/\d/.test(v)?age(v):'')))}
 function mapQ(s){var ad='';(s.info||[]).forEach(function(i){if(i[0]==='地址')ad=i[1]});
   var t=lab(s._src);
   if(ad)return s.n+' '+ad;
@@ -117,7 +121,8 @@ function card(s){
   c.appendChild(ch);
   function kv(l,v){var d=h('div','kv');d.appendChild(h('b','',l+':'));d.appendChild(document.createTextNode(' '+v));c.appendChild(d)}
   if(s.ser)kv('主機序號',s.ser);
-  (s.info||[]).forEach(function(i){kv(i[0],i[1])});
+  var hasB=false;(s.info||[]).forEach(function(i){if(i[0]==='上次更換電池'){hasB=true;bat(c,i[1])}else kv(i[0],i[1])});
+  if(!hasB&&(s.info||[]).length)bat(c,'沒有紀錄');
   var rs=h('div','recs');
   if(!(s.rec||[]).length)rs.appendChild(h('div','none','沒有維修紀錄'));
   (s.rec||[]).forEach(function(r){var d=h('div','rec');
