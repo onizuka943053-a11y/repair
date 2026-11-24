@@ -41,6 +41,13 @@ main{padding:4px 12px 40px}
 .empty .big{font-size:48px}
 .empty button{margin-top:14px;padding:12px 22px;font-size:16px;background:var(--ac);color:var(--bg);border:0;font-weight:600}
 #more{display:block;width:100%;padding:12px;margin:8px 0}
+#lock{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:20;padding:20px}
+#lock[hidden]{display:none}
+#lock .box{background:var(--card);border-radius:14px;padding:20px;width:100%;max-width:340px}
+#lock input[type=password]{width:100%;font-size:17px;padding:10px;border:2px solid var(--ac);border-radius:10px;background:var(--bg);color:var(--tx);margin:8px 0}
+#lock label{font-size:14px;display:block;margin:4px 0 10px}
+#lock .box button{width:100%;padding:11px;background:var(--ac);color:var(--bg);border:0;font-weight:600}
+#le{color:#d9534f;font-size:13px;margin-top:6px}
 .tabs{display:flex;gap:6px;margin-top:8px;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .tabs:empty{display:none}
 .tab{padding:5px 14px;font-size:14px;border-radius:99px;flex:none}
@@ -58,10 +65,11 @@ main{padding:4px 12px 40px}
   <div id="shs" class="tabs"></div>
   <div id="sum"></div>
   <div id="meta"></div>
-  <div style="font-size:11px;color:var(--sub);margin:2px 2px 0">頁面版本 2026-11-24</div>
+  <div style="font-size:11px;color:var(--sub);margin:2px 2px 0">頁面版本 2026-11-24c</div>
 </header>
 <main id="out"></main>
-<input id="f" type="file" accept=".json,application/json" multiple hidden>
+<input id="f" type="file" multiple hidden>
+<div id="lock" hidden><div class="box"><div id="lt" style="font-weight:700">🔒 請輸入密碼</div><input id="pw" type="password" autocomplete="current-password"><label><input id="rm" type="checkbox" checked> 記住密碼</label><button id="go" type="button">解鎖</button><div id="le"></div></div></div>
 <script>
 (function(){
 var q=document.getElementById('q'),out=document.getElementById('out'),sum=document.getElementById('sum'),meta=document.getElementById('meta'),f=document.getElementById('f');
@@ -133,6 +141,7 @@ function card(s){
 }
 function readFile(file){return file.text().then(function(t){
   t=t.replace(/^\uFEFF/,'');var d=JSON.parse(t);
+  if(d&&d.data&&d.iv)return unlock(d).then(function(x){x.source=x.source||d.source||file.name;return x});
   if(!d||!Array.isArray(d.stores))throw new Error('格式不對');
   d.source=d.source||file.name;return d})}
 f.onchange=function(){
@@ -143,7 +152,15 @@ f.onchange=function(){
   .catch(function(e){f.value='';sum.textContent='載入失敗:'+(e&&e.message?e.message:'檔案不是正確的資料檔')})};
 document.getElementById('upd').onclick=function(){f.click()};
 var tm;q.oninput=function(){clearTimeout(tm);tm=setTimeout(function(){shown=30;render()},150)};
-loadAll().then(function(l){l.forEach(function(d){sets[d.source]=d});build();render()});
+function b64d(s){var b=atob(s),u=new Uint8Array(b.length);for(var i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u}
+function dec(o,pw){return crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']).then(function(k){return crypto.subtle.deriveKey({name:'PBKDF2',salt:b64d(o.salt),iterations:o.iter||250000,hash:'SHA-256'},k,{name:'AES-GCM',length:256},false,['decrypt'])}).then(function(k){return crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(o.iv)},k,b64d(o.data))}).then(function(b){return JSON.parse(new TextDecoder().decode(b))})}
+function ask(m){return new Promise(function(ok){var L=document.getElementById('lock'),p=document.getElementById('pw');document.getElementById('le').textContent=m||'';L.hidden=false;p.value='';p.focus();document.getElementById('go').onclick=function(){if(!p.value)return;L.hidden=true;ok({pw:p.value,rm:document.getElementById('rm').checked})}})}
+function unlock(o){var st=null;try{st=localStorage.getItem('rpw')}catch(e){}
+  function tr(pw,rm){return dec(o,pw).then(function(d){if(rm){try{localStorage.setItem('rpw',pw)}catch(e){}}return d},function(){try{localStorage.removeItem('rpw')}catch(e){}return ask('密碼不對,請再試一次').then(function(r){return tr(r.pw,r.rm)})})}
+  return st?tr(st,true):ask('').then(function(r){return tr(r.pw,r.rm)})}
+function one(n){return fetch(n,{cache:'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(o){if(!o||!o.data)throw 0;var cur=sets[o.source];if(cur&&o.exported&&cur.exported===o.exported)return 0;return unlock(o).then(function(d){d.source=d.source||o.source||n;sets[d.source]=d;return save(d).then(function(){return 1})})}).catch(function(){return 0})}
+function auto(){return ['維修資料.enc','全家資料.enc'].reduce(function(p,n){return p.then(function(a){return one(n).then(function(x){a.push(x);return a})})},Promise.resolve([]))}
+loadAll().then(function(l){l.forEach(function(d){sets[d.source]=d});build();render();return auto()}).then(function(r){if(r&&(r[0]||r[1])){build();shown=30;render()}});
 })();
 </script>
 </body>

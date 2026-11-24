@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>資料加密工具</title>
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--tx:#1b1f24;--sub:#6a737d;--ac:#2f5496;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#121417;--card:#1c2026;--tx:#e8eaed;--sub:#9aa3ad;--ac:#8fb0ee;color-scheme:dark}}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.6 -apple-system,"Microsoft JhengHei","PingFang TC",sans-serif;padding:20px}
+.c{max-width:520px;margin:0 auto;background:var(--card);border-radius:14px;padding:20px}
+h1{font-size:20px;margin:0 0 8px}p{color:var(--sub);font-size:14px;margin:6px 0}
+label{display:block;margin-top:14px;font-weight:600;font-size:14px}
+input{width:100%;box-sizing:border-box;font:inherit;padding:10px;border:1px solid var(--sub);border-radius:8px;background:var(--bg);color:var(--tx)}
+button{margin-top:18px;width:100%;font:inherit;font-weight:600;padding:12px;border:0;border-radius:10px;background:var(--ac);color:var(--bg)}
+#msg{margin-top:14px;font-size:14px;white-space:pre-wrap}
+</style></head><body><div class="c">
+<h1>🔒 資料加密工具</h1>
+<p>選擇電腦匯出的 .json,輸入密碼,會下載一個加密檔(.enc)。把 .enc 上傳到 GitHub,不要上傳原本的 .json。所有動作都在你這台電腦的瀏覽器裡完成,檔案不會傳到任何地方。</p>
+<label>選擇資料檔(可多選)</label><input id="f" type="file" accept=".json,application/json" multiple>
+<label>密碼(至少 8 個字,同事要輸入同一組)</label><input id="p1" type="password" autocomplete="new-password">
+<label>再輸入一次密碼</label><input id="p2" type="password" autocomplete="new-password">
+<button id="go" type="button">加密並下載</button>
+<div id="msg"></div>
+</div>
+<script>
+(function(){
+var msg=document.getElementById('msg');
+function b64(u){var s='',i=0;for(;i<u.length;i+=32768)s+=String.fromCharCode.apply(null,u.subarray(i,i+32768));return btoa(s)}
+function enc(txt,pw){var e=new TextEncoder(),salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
+  return crypto.subtle.importKey('raw',e.encode(pw),'PBKDF2',false,['deriveKey']).then(function(k){
+    return crypto.subtle.deriveKey({name:'PBKDF2',salt:salt,iterations:250000,hash:'SHA-256'},k,{name:'AES-GCM',length:256},false,['encrypt'])}).then(function(k){
+    return crypto.subtle.encrypt({name:'AES-GCM',iv:iv},k,e.encode(txt))}).then(function(buf){
+    return {salt:b64(salt),iv:b64(iv),data:b64(new Uint8Array(buf))}})}
+function save(name,text){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/octet-stream'}));a.download=name;document.body.appendChild(a);a.click();a.remove()}
+document.getElementById('go').onclick=function(){
+  var fs=Array.prototype.slice.call(document.getElementById('f').files),p1=document.getElementById('p1').value,p2=document.getElementById('p2').value;
+  if(!window.crypto||!crypto.subtle){msg.textContent='這個瀏覽器不支援加密,請改用 Chrome 或 Edge,並用 https 網址開啟這個頁面。';return}
+  if(!fs.length){msg.textContent='請先選擇資料檔';return}
+  if(p1.length<8){msg.textContent='密碼至少要 8 個字';return}
+  if(p1!==p2){msg.textContent='兩次輸入的密碼不一樣';return}
+  msg.textContent='加密中…';
+  fs.reduce(function(p,f){return p.then(function(){return f.text().then(function(t){
+    var d=JSON.parse(t.replace(/^\uFEFF/,''));if(!d||!Array.isArray(d.stores))throw new Error(f.name+' 不是正確的資料檔');
+    return enc(t,p1).then(function(o){o.v=1;o.iter=250000;o.source=d.source||'';o.exported=d.exported||'';
+      var n=f.name.replace(/\.json$/i,'')+'.enc';save(n,JSON.stringify(o));msg.textContent+='\n已產生 '+n+'('+d.stores.length+' 間店)'})})})},Promise.resolve())
+  .then(function(){msg.textContent+='\n完成。請把 .enc 檔上傳到 GitHub。'}).catch(function(e){msg.textContent='失敗:'+e.message})
+};
+})();
+</script></body></html>
