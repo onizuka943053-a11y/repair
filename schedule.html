@@ -42,6 +42,9 @@ h2.warn{color:var(--warn)}
 .acts{display:flex;flex-direction:column;gap:6px}
 .gh{display:flex;justify-content:space-between;align-items:center;margin:16px 2px 4px;font-weight:700;color:var(--ac)}
 .gh button{padding:2px 10px;font-size:13px}
+.fx{font-size:14px;font-weight:600;margin-top:2px;word-break:break-word}
+.cons{background:var(--acbg);border-radius:12px;padding:10px 12px;margin:10px 0;font-size:15px;line-height:1.7}
+.fxr{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
 .empty{text-align:center;color:var(--sub);padding:40px 16px}
 .fab{position:fixed;left:0;right:0;bottom:calc(10px + env(safe-area-inset-bottom,0px));display:flex;gap:8px;padding:0 12px;z-index:6}
 .fab button{flex:1;padding:12px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.25)}
@@ -61,7 +64,7 @@ h2.warn{color:var(--warn)}
 <body>
 <header>
   <div class="top"><button id="prev">◀</button><div id="dl"></div><button id="next">▶</button></div>
-  <div class="row2"><button id="today">回到今天</button><div id="prog"></div></div>
+  <div class="row2"><button id="today">回到今天</button><div id="prog"></div><button id="set">⚙ 叫修選項</button></div>
   <div class="tabs"><button class="tab on" id="t1">當日行程</button><button class="tab" id="t2">之後行程</button></div>
 </header>
 <div id="msg"></div>
@@ -73,6 +76,9 @@ h2.warn{color:var(--warn)}
 (function(){
 var K='sched1',items=[],view='day',cur='',CH=['全家','7-11','萊爾富','星巴克','康是美'],impCh='全家',impClr=false;
 function lastCh(){try{return localStorage.getItem('chain1')||'全家'}catch(e){return'全家'}}
+var FXD=['需更換電瓶(12AH)','UPS 內部故障(UPS)','電池燈保固內','後場異音','全家電池故障(7AH)'],FX=FXD.slice();
+try{var fr=JSON.parse(localStorage.getItem('fix1')||'null');if(fr&&Array.isArray(fr))FX=fr}catch(e){}
+function saveFx(){try{localStorage.setItem('fix1',JSON.stringify(FX))}catch(e){}}
 var SEED=[["017329","琉球白沙店","20261201"],["025387","東港德譽店","20261201"],["025626","萬巒豬腳店","20261203"],["020579","大樹義大二店","20261208"],["016487","大樹義大一店","20261208"],["024253","大樹義大三店","20261208"],["021858","大發輔大二店","20261210"],["025808","高雄金安店","20261210"],["025256","台南東陽店","20261215"],["025763","佳里祥和店","20261215"],["025610","麻豆柚城店","20261215"],["016906","高雄三信店","20261217"],["025300","高雄八德店","20261222"],["024156","高雄港灣店","20261222"],["024581","梓官詮學店","20261223"],["025430","左營海訓店","20261223"]];
 var out=document.getElementById('out'),msg=document.getElementById('msg');
 function p2(n){return(n<10?'0':'')+n}
@@ -84,7 +90,7 @@ function h(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)
 function say(t){msg.textContent=t;setTimeout(function(){if(msg.textContent===t)msg.textContent=''},4000)}
 function load(){try{var r=localStorage.getItem(K);if(r)items=JSON.parse(r);else{items=SEED.map(function(s,i){return mk(s[0],s[1],'UPS機組',s[2].replace(/(\d{4})(\d\d)(\d\d)/,'$1-$2-$3'))});save()}}catch(e){items=[]}}
 function save(){try{localStorage.setItem(K,JSON.stringify(items))}catch(e){say('這個瀏覽器無法保存資料')}}
-var seq=0;function mk(no,name,item,date,chain){return{id:Date.now()+'_'+(seq++),no:no||'',name:clean(name),item:item||'',date:date,done:false,addr:'',note:'',chain:chain||'全家'}}
+var seq=0;function mk(no,name,item,date,chain){return{id:Date.now()+'_'+(seq++),no:no||'',name:clean(name),item:item||'',date:date,done:false,addr:'',note:'',fix:'',chain:chain||'全家'}}
 function clean(s){return String(s||'').replace(/[\u3000\s]+/g,' ').trim()}
 function mapUrl(it){var n=it.name,ch=it.chain||'全家',q;
   if(ch==='7-11')q='7-ELEVEN '+n.replace(/店$/,'門市');else if(ch==='萊爾富')q='萊爾富 '+n;else if(ch==='星巴克')q=n.indexOf('星巴克')===0?n:'星巴克 '+n;else if(ch==='康是美')q=n.indexOf('康是美')===0?n:'康是美 '+n;else q='全家便利商店 '+n;
@@ -105,7 +111,7 @@ function dragInit(hd,c){hd.addEventListener('pointerdown',function(e){
 function card(it){
   var c=h('div','it'+(it.done?' done':'')),ck=h('button','ck',it.done?'✓':'');ck.title=it.done?'退回未完成':'標記完成';ck.onclick=function(){toggle(it)};
   var b=h('div','bd');b.appendChild(h('div','nm',it.name));
-  var s=[it.chain||'全家',it.no,it.item].filter(Boolean).join(' ・ ');if(s)b.appendChild(h('div','sb',s));
+  var s=[it.chain||'全家',it.item].filter(Boolean).join(' ・ ');if(s)b.appendChild(h('div','sb',s));if(it.fix)b.appendChild(h('div','fx','🔧 '+it.fix));
   if(it.addr)b.appendChild(h('div','sb','地址:'+it.addr));
   if(it.note)b.appendChild(h('div','nt',it.note));
   var a=h('div','acts'),m=h('a','ic','📍');m.href=mapUrl(it);m.target='_blank';m.rel='noopener';m.title='Google 地圖';
@@ -125,6 +131,7 @@ function render(){
     document.getElementById('prog').textContent=L.length?'已完成 '+D.length+' / '+L.length:'';
     if(!L.length){var e=h('div','empty','這天沒有行程');var nx=items.map(function(i){return i.date}).filter(function(d){return d>cur}).sort()[0];
       if(nx){var bt=h('button','','跳到下一個行程日 '+lab(nx));bt.style.marginTop='12px';bt.onclick=function(){cur=nx;render()};e.appendChild(document.createElement('br'));e.appendChild(bt)}out.appendChild(e);return}
+    var cs=cons(L);if(cs.length){var cb=h('div','cons'),ct=h('div','',(cur===today?'今日':lab(cur))+'預估耗材');ct.style.fontWeight='700';cb.appendChild(ct);cs.forEach(function(x){cb.appendChild(h('div','',x.n+':'+x.c+' '+x.u))});out.appendChild(cb)}
     out.appendChild(h('h2','','未完成('+T.length+')'));
     if(!T.length)out.appendChild(h('div','empty','全部完成了 🎉'));
     var tw=h('div');T.forEach(function(i){tw.appendChild(card(i))});out.appendChild(tw);
@@ -141,14 +148,27 @@ function render(){
   }
 }
 function field(bx,label,type,val){bx.appendChild(h('label','',label));var i=document.createElement('input');i.type=type;i.value=val||'';bx.appendChild(i);return i}
+function cons(L){var m={},ord=[];L.forEach(function(i){var f=i.fix||'',re=/[\(（]([^()（）]+)[\)）]/g,x;while((x=re.exec(f))){var l=clean(x[1]);if(!l)continue;if(!(l in m)){m[l]=0;ord.push(l)}m[l]++}});
+  return ord.map(function(l){var u=l.toUpperCase(),n=u.slice(-2)==='AH'?[l+' 電池','組']:u==='UPS'?['UPS','台']:[l,'個'];return{n:n[0],c:m[l],u:n[1]}})}
+function fixField(bx,cur){bx.appendChild(h('label','','叫修內容(上方 ⚙ 可新增或移除選項)'));var s=document.createElement('select'),list=FX.slice();if(cur&&list.indexOf(cur)<0)list.push(cur);
+  var o0=document.createElement('option');o0.value='';o0.textContent='(不指定)';s.appendChild(o0);list.forEach(function(t){var o=document.createElement('option');o.value=o.textContent=t;s.appendChild(o)});s.value=cur||'';bx.appendChild(s);return s}
+function fxMgr(){var bx=document.getElementById('bx');bx.textContent='';bx.appendChild(h('div','nm','叫修內容選項'));
+  bx.appendChild(h('label','','括號 () 裡的文字會當作耗材:(12AH) 算 12AH 電池 1 組,(UPS) 算 UPS 1 台,(7AH) 算 7AH 電池 1 組'));
+  var box=h('div');function draw(){box.textContent='';FX.forEach(function(t,i){var r=h('div','fxr');r.appendChild(h('span','',t));var x=h('button','ic','✕');x.onclick=function(){FX.splice(i,1);saveFx();draw()};r.appendChild(x);box.appendChild(r)});if(!FX.length)box.appendChild(h('div','sb','目前沒有選項'))}
+  draw();bx.appendChild(box);var inp=field(bx,'新增選項(例如 需更換風扇(風扇))','text','');
+  var bt=h('div','bt'),ad=h('button','','新增'),rs=h('button','','還原預設'),ok=h('button','pri','完成');
+  ad.onclick=function(){var v=clean(inp.value);if(v&&FX.indexOf(v)<0){FX.push(v);saveFx();inp.value='';draw()}};
+  rs.onclick=function(){if(confirm('還原成預設的 5 個選項?')){FX=FXD.slice();saveFx();draw()}};
+  ok.onclick=function(){document.getElementById('mod').hidden=true;render()};
+  bt.appendChild(rs);bt.appendChild(ad);bt.appendChild(ok);bx.appendChild(bt);document.getElementById('mod').hidden=false}
 function edit(it){
   var nw=!it,d=it||{name:'',no:'',item:'UPS機組',date:view==='day'?cur:ymd(new Date()),addr:'',note:''};
   var bx=document.getElementById('bx');bx.textContent='';bx.appendChild(h('div','nm',nw?'新增行程':'編輯行程'));
   bx.appendChild(h('label','','連鎖店'));var sel=document.createElement('select');CH.forEach(function(c){var o=document.createElement('option');o.textContent=o.value=c;sel.appendChild(o)});sel.value=d.chain||lastCh();bx.appendChild(sel);
-  var f1=field(bx,'店名','text',d.name),f2=field(bx,'店號(選填)','text',d.no),f3=field(bx,'項目','text',d.item),f4=field(bx,'日期','date',d.date),f5=field(bx,'地址(選填,有填地圖會用地址搜尋)','text',d.addr),f6=field(bx,'備註(選填)','text',d.note);
+  var f1=field(bx,'店名','text',d.name),f2=fixField(bx,d.fix),f3=field(bx,'項目','text',d.item),f4=field(bx,'日期','date',d.date),f5=field(bx,'地址(選填,有填地圖會用地址搜尋)','text',d.addr),f6=field(bx,'備註(選填)','text',d.note);
   var bt=h('div','bt'),sv=h('button','pri','儲存'),cn=h('button','','取消');
   sv.onclick=function(){if(!clean(f1.value)){alert('請輸入店名');return}if(!f4.value){alert('請選擇日期');return}
-    var o=nw?mk(f2.value,f1.value,f3.value,f4.value,sel.value):it;o.chain=sel.value;try{localStorage.setItem('chain1',sel.value)}catch(e){}o.name=clean(f1.value);o.no=clean(f2.value);o.item=clean(f3.value);o.date=f4.value;o.addr=clean(f5.value);o.note=clean(f6.value);
+    var o=nw?mk('',f1.value,f3.value,f4.value,sel.value):it;o.fix=f2.value;o.chain=sel.value;try{localStorage.setItem('chain1',sel.value)}catch(e){}o.name=clean(f1.value);o.item=clean(f3.value);o.date=f4.value;o.addr=clean(f5.value);o.note=clean(f6.value);
     if(nw)items.push(o);save();document.getElementById('mod').hidden=true;if(view==='day')cur=o.date;render()};
   cn.onclick=function(){document.getElementById('mod').hidden=true};
   bt.appendChild(cn);if(!nw){var dl=h('button','del','刪除');dl.onclick=function(){if(confirm('確定刪除「'+it.name+'」?')){items=items.filter(function(x){return x!==it});save();document.getElementById('mod').hidden=true;render()}};bt.appendChild(dl)}
@@ -171,6 +191,7 @@ document.getElementById('imp').onclick=function(){impClr=false;var bx=document.g
   go.onclick=function(){if(cb.checked&&!confirm('會刪除目前所有行程,確定嗎?'))return;impCh=sel.value;impClr=cb.checked;document.getElementById('mod').hidden=true;document.getElementById('f').click()};
   bt.appendChild(cn);bt.appendChild(go);bx.appendChild(bt);document.getElementById('mod').hidden=false};
 document.getElementById('add').onclick=function(){edit(null)};
+document.getElementById('set').onclick=fxMgr;
 document.getElementById('prev').onclick=function(){cur=shift(cur,-1);render()};
 document.getElementById('next').onclick=function(){cur=shift(cur,1);render()};
 document.getElementById('today').onclick=function(){cur=ymd(new Date());render()};
