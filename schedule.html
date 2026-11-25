@@ -29,6 +29,8 @@ h2{font-size:15px;margin:16px 2px 6px;color:var(--sub)}
 h2.warn{color:var(--warn)}
 .it{display:flex;align-items:flex-start;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 12px;margin:8px 0}
 .it.done{opacity:.7}
+.hd{flex:none;width:24px;align-self:stretch;display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:22px;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;margin-left:-4px}
+.it.drg{box-shadow:0 6px 18px rgba(0,0,0,.35);border-color:var(--ac);position:relative;z-index:3}
 .it.done .nm{text-decoration:line-through}
 .ck{flex:none;width:34px;height:34px;border-radius:50%;border:2px solid var(--ac);padding:0;font-size:18px;color:#fff;background:transparent}
 .it.done .ck{background:var(--ok);border-color:var(--ok)}
@@ -89,6 +91,17 @@ function mapUrl(it){var n=it.name,ch=it.chain||'全家',q;
   if(it.addr)q+=' '+it.addr;
   return'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function toggle(it){it.done=!it.done;save();render()}
+function reorder(ids){var pos=[],map={};items.forEach(function(x,i){if(ids.indexOf(x.id)>=0){pos.push(i);map[x.id]=x}});ids.forEach(function(id,k){if(map[id])items[pos[k]]=map[id]})}
+function dragInit(hd,c){hd.addEventListener('pointerdown',function(e){
+  e.preventDefault();var box=c.parentNode,y=e.clientY,tm;if(hd.setPointerCapture)hd.setPointerCapture(e.pointerId);c.classList.add('drg');
+  function place(){var sib=[].slice.call(box.children).filter(function(x){return x!==c&&x.classList.contains('it')}),ref=null;
+    for(var i=0;i<sib.length;i++){var r=sib[i].getBoundingClientRect();if(y<r.top+r.height/2){ref=sib[i];break}}
+    if(ref!==c.nextSibling)box.insertBefore(c,ref)}
+  function mv(ev){y=ev.clientY;place()}
+  function up(){hd.removeEventListener('pointermove',mv);hd.removeEventListener('pointerup',up);hd.removeEventListener('pointercancel',up);clearInterval(tm);c.classList.remove('drg');
+    reorder([].slice.call(box.children).filter(function(x){return x.dataset&&x.dataset.id}).map(function(x){return x.dataset.id}));save();render()}
+  hd.addEventListener('pointermove',mv);hd.addEventListener('pointerup',up);hd.addEventListener('pointercancel',up);
+  tm=setInterval(function(){if(y<90){window.scrollBy(0,-14);place()}else if(y>window.innerHeight-110){window.scrollBy(0,14);place()}},16)})}
 function card(it){
   var c=h('div','it'+(it.done?' done':'')),ck=h('button','ck',it.done?'✓':'');ck.title=it.done?'退回未完成':'標記完成';ck.onclick=function(){toggle(it)};
   var b=h('div','bd');b.appendChild(h('div','nm',it.name));
@@ -99,6 +112,7 @@ function card(it){
   var e=h('button','ic','✎');e.title='編輯';e.onclick=function(){edit(it)};
   a.appendChild(m);a.appendChild(e);
   if(it.done){var u=h('button','ic','↩');u.title='退回未完成';u.onclick=function(){toggle(it)};a.appendChild(u)}
+  c.dataset.id=it.id;if(view==='day'){var hd=h('div','hd','≡');hd.title='拖曳排序';dragInit(hd,c);c.appendChild(hd)}
   c.appendChild(ck);c.appendChild(b);c.appendChild(a);return c}
 function render(){
   var today=ymd(new Date());out.textContent='';
@@ -113,9 +127,9 @@ function render(){
       if(nx){var bt=h('button','','跳到下一個行程日 '+lab(nx));bt.style.marginTop='12px';bt.onclick=function(){cur=nx;render()};e.appendChild(document.createElement('br'));e.appendChild(bt)}out.appendChild(e);return}
     out.appendChild(h('h2','','未完成('+T.length+')'));
     if(!T.length)out.appendChild(h('div','empty','全部完成了 🎉'));
-    T.forEach(function(i){out.appendChild(card(i))});
+    var tw=h('div');T.forEach(function(i){tw.appendChild(card(i))});out.appendChild(tw);
     out.appendChild(h('h2','','已完成('+D.length+')'));
-    D.forEach(function(i){out.appendChild(card(i))});
+    var dw=h('div');D.forEach(function(i){dw.appendChild(card(i))});out.appendChild(dw);
   }else{
     document.getElementById('dl').textContent='之後行程';document.getElementById('prog').textContent='';
     var od=items.filter(function(i){return i.date<today&&!i.done});
