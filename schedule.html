@@ -69,7 +69,7 @@ h2.warn{color:var(--warn)}
 <div id="mod" hidden><div class="box" id="bx"></div></div>
 <script>
 (function(){
-var K='sched1',items=[],view='day',cur='',CH=['全家','7-11','萊爾富'],impCh='全家',impClr=false;
+var K='sched1',items=[],view='day',cur='',CH=['全家','7-11','萊爾富','星巴克','康是美'],impCh='全家',impClr=false;
 function lastCh(){try{return localStorage.getItem('chain1')||'全家'}catch(e){return'全家'}}
 var SEED=[["017329","琉球白沙店","20261201"],["025387","東港德譽店","20261201"],["025626","萬巒豬腳店","20261203"],["020579","大樹義大二店","20261208"],["016487","大樹義大一店","20261208"],["024253","大樹義大三店","20261208"],["021858","大發輔大二店","20261210"],["025808","高雄金安店","20261210"],["025256","台南東陽店","20261215"],["025763","佳里祥和店","20261215"],["025610","麻豆柚城店","20261215"],["016906","高雄三信店","20261217"],["025300","高雄八德店","20261222"],["024156","高雄港灣店","20261222"],["024581","梓官詮學店","20261223"],["025430","左營海訓店","20261223"]];
 var out=document.getElementById('out'),msg=document.getElementById('msg');
@@ -85,7 +85,7 @@ function save(){try{localStorage.setItem(K,JSON.stringify(items))}catch(e){say('
 var seq=0;function mk(no,name,item,date,chain){return{id:Date.now()+'_'+(seq++),no:no||'',name:clean(name),item:item||'',date:date,done:false,addr:'',note:'',chain:chain||'全家'}}
 function clean(s){return String(s||'').replace(/[\u3000\s]+/g,' ').trim()}
 function mapUrl(it){var n=it.name,ch=it.chain||'全家',q;
-  if(ch==='7-11')q='7-ELEVEN '+n.replace(/店$/,'門市');else if(ch==='萊爾富')q='萊爾富 '+n;else q='全家便利商店 '+n;
+  if(ch==='7-11')q='7-ELEVEN '+n.replace(/店$/,'門市');else if(ch==='萊爾富')q='萊爾富 '+n;else if(ch==='星巴克')q=n.indexOf('星巴克')===0?n:'星巴克 '+n;else if(ch==='康是美')q=n.indexOf('康是美')===0?n:'康是美 '+n;else q='全家便利商店 '+n;
   if(it.addr)q+=' '+it.addr;
   return'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 function toggle(it){it.done=!it.done;save();render()}
