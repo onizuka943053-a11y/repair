@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="行程">
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAADBUlEQVR42u3bPVLjMACGYePJfZIb7CWgo9qOnT0OEzoqOi4TTsQWafYnC8GWZX/S83Yww4+kJ7KTKDf72+MgXWo0BYJDcAgOwSE4BIfgEByCQ3BIcAgOwSE4BIfgEByCQ3AIDgkOwSE4BIfgEByCQ3CotXbb/xdPrw+/f3m4e8qd7qyxjFmzefE7oTK2PxaXFcEhOASH4BAcgkNwqJUWf4X09PPHtB88PB4X+s31W24sn/5mO4fgEByCQ3AIDsEhOCQ4FInj/KLhv6csz98Jenk0dywBB4yjTxRHj2UX8ID78+2DrD0jeiy7lGlto6yxuCEVHIJDcAgOwSE4BIfgEByCQ4JDcKhAy78r++3dLC/Y44IHROwcgkNwCA7BITgEh+AQHIJDcEhw1G//fA+H/isj1AcclfaMRB9w1LuaxPmAo+p9xv75PogIHCvcgab4gGOd5yYRPuBY7Vnr9n3AsY6MYRjevr/AQUakDDjIgGNLpciAo/a2ESQDDjLgIAMOMuAgAw4y4GhYRnqj1Vrub0VvG/E4ah7C601GNo6ah/A6lBGMo+YhvD5lpOL44BAeGV3j+Hi1yvroWUYejmtWq5SPzmWE4bh+teb7ICMJx1dXa44PMsJwTFiAaT7IiLysVPBBRvAN6aI+yIh/KruQDzJawFHz/qNnGUPuy+dlffRzRKMLHAV9kNEgjiI+yGgWx0wfZDSOY7IPMrrAsfTi9SljaOmAcbdLCMdqPno219pHE8quZee7UYOfWym1oq5TbX6oaf66kjE0/Im3OatLRuM4Jq8xGV3gmLDSZHSE40vrTUZ3OK5cdTI6xfHp2pNxsV0/Qz0L+Ov9NizgoMFlRXAIDsEhOASH4BAcgkNaA8fh7sksh86tnUNwaJs4XFlCZ3VsZiRkuKyoxXsOm0fcTI5NjoqMIt3sb4/1R3h6fbDM239ojZ2Mk4yYncMuEvEoWh+HPFsRHIJDcAgOCQ7BITgEh+AQHIJDcAgOwSHBITgEh+AQHIJDcAgOwSE4JDgEh+BQ4X4BQyMXKOhERncAAAAASUVORK5CYII=">
+<title>行程小幫手</title>
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--tx:#1b1f24;--sub:#6a737d;--line:#e3e6ea;--ac:#2f5496;--acbg:#e8eef9;--ok:#2e9d5b;--warn:#c0392b;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121417;--card:#1c2026;--tx:#e8eaed;--sub:#9aa3ad;--line:#2d333b;--ac:#8fb0ee;--acbg:#1f2a40;--ok:#4cc27f;--warn:#ef7a6c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121417;--card:#1c2026;--tx:#e8eaed;--sub:#9aa3ad;--line:#2d333b;--ac:#8fb0ee;--acbg:#1f2a40;--ok:#4cc27f;--warn:#ef7a6c;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 -apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+header{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding:10px 12px 6px;z-index:5}
+.top{display:flex;align-items:center;gap:8px}
+#dl{flex:1;text-align:center;font-size:20px;font-weight:700}
+button{font:inherit;font-size:15px;border:1px solid var(--line);background:var(--card);color:var(--ac);border-radius:10px;padding:6px 12px}
+.row2{display:flex;align-items:center;gap:8px;margin-top:6px}
+#prog{flex:1;font-size:13px;color:var(--sub)}
+.tabs{display:flex;gap:6px;margin-top:8px}
+.tab{flex:1;padding:8px}
+.tab.on{background:var(--ac);color:var(--bg);border-color:var(--ac)}
+main{padding:2px 12px 120px}
+h2{font-size:15px;margin:16px 2px 6px;color:var(--sub)}
+h2.warn{color:var(--warn)}
+.it{display:flex;align-items:flex-start;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 12px;margin:8px 0}
+.it.done{opacity:.7}
+.it.done .nm{text-decoration:line-through}
+.ck{flex:none;width:34px;height:34px;border-radius:50%;border:2px solid var(--ac);padding:0;font-size:18px;color:#fff;background:transparent}
+.it.done .ck{background:var(--ok);border-color:var(--ok)}
+.bd{flex:1;min-width:0}
+.nm{font-size:17px;font-weight:700;word-break:break-word}
+.sb{font-size:13px;color:var(--sub);word-break:break-word}
+.nt{font-size:13px;margin-top:2px;word-break:break-word}
+.ic{flex:none;width:36px;height:36px;padding:0;display:flex;align-items:center;justify-content:center;font-size:18px;text-decoration:none;color:var(--ac);border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.acts{display:flex;flex-direction:column;gap:6px}
+.gh{display:flex;justify-content:space-between;align-items:center;margin:16px 2px 4px;font-weight:700;color:var(--ac)}
+.gh button{padding:2px 10px;font-size:13px}
+.empty{text-align:center;color:var(--sub);padding:40px 16px}
+.fab{position:fixed;left:0;right:0;bottom:calc(10px + env(safe-area-inset-bottom,0px));display:flex;gap:8px;padding:0 12px;z-index:6}
+.fab button{flex:1;padding:12px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.fab #add{background:var(--ac);color:var(--bg);border-color:var(--ac)}
+#msg{font-size:13px;color:var(--ok);padding:4px 14px}
+#mod{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+#mod[hidden]{display:none}
+.box{background:var(--card);width:100%;max-width:480px;border-radius:16px 16px 0 0;padding:16px;max-height:92vh;overflow:auto}
+.box label{display:block;font-size:13px;color:var(--sub);margin-top:10px}
+.box input,.box select{width:100%;font:inherit;font-size:16px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--tx)}
+.bt{display:flex;gap:8px;margin-top:16px}
+.bt button{flex:1;padding:11px}
+.bt .pri{background:var(--ac);color:var(--bg);border-color:var(--ac)}
+.bt .del{color:var(--warn)}
+</style>
+</head>
+<body>
+<header>
+  <div class="top"><button id="prev">◀</button><div id="dl"></div><button id="next">▶</button></div>
+  <div class="row2"><button id="today">回到今天</button><div id="prog"></div></div>
+  <div class="tabs"><button class="tab on" id="t1">當日行程</button><button class="tab" id="t2">之後行程</button></div>
+</header>
+<div id="msg"></div>
+<main id="out"></main>
+<div class="fab"><button id="add">＋ 新增行程</button><button id="imp">匯入 Excel</button></div>
+<input id="f" type="file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden>
+<div id="mod" hidden><div class="box" id="bx"></div></div>
+<script>
+(function(){
+var K='sched1',items=[],view='day',cur='',CH=['全家','7-11','萊爾富'],impCh='全家',impClr=false;
+function lastCh(){try{return localStorage.getItem('chain1')||'全家'}catch(e){return'全家'}}
+var SEED=[["017329","琉球白沙店","20261201"],["025387","東港德譽店","20261201"],["025626","萬巒豬腳店","20261203"],["020579","大樹義大二店","20261208"],["016487","大樹義大一店","20261208"],["024253","大樹義大三店","20261208"],["021858","大發輔大二店","20261210"],["025808","高雄金安店","20261210"],["025256","台南東陽店","20261215"],["025763","佳里祥和店","20261215"],["025610","麻豆柚城店","20261215"],["016906","高雄三信店","20261217"],["025300","高雄八德店","20261222"],["024156","高雄港灣店","20261222"],["024581","梓官詮學店","20261223"],["025430","左營海訓店","20261223"]];
+var out=document.getElementById('out'),msg=document.getElementById('msg');
+function p2(n){return(n<10?'0':'')+n}
+function ymd(d){return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())}
+function pd(s){var a=s.split('-');return new Date(+a[0],a[1]-1,+a[2])}
+function lab(s){var d=pd(s);return(d.getMonth()+1)+'/'+d.getDate()+'('+'日一二三四五六'[d.getDay()]+')'}
+function shift(s,n){var d=pd(s);d.setDate(d.getDate()+n);return ymd(d)}
+function h(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+function say(t){msg.textContent=t;setTimeout(function(){if(msg.textContent===t)msg.textContent=''},4000)}
+function load(){try{var r=localStorage.getItem(K);if(r)items=JSON.parse(r);else{items=SEED.map(function(s,i){return mk(s[0],s[1],'UPS機組',s[2].replace(/(\d{4})(\d\d)(\d\d)/,'$1-$2-$3'))});save()}}catch(e){items=[]}}
+function save(){try{localStorage.setItem(K,JSON.stringify(items))}catch(e){say('這個瀏覽器無法保存資料')}}
+var seq=0;function mk(no,name,item,date,chain){return{id:Date.now()+'_'+(seq++),no:no||'',name:clean(name),item:item||'',date:date,done:false,addr:'',note:'',chain:chain||'全家'}}
+function clean(s){return String(s||'').replace(/[\u3000\s]+/g,' ').trim()}
+function mapUrl(it){var n=it.name,ch=it.chain||'全家',q;
+  if(ch==='7-11')q='7-ELEVEN '+n.replace(/店$/,'門市');else if(ch==='萊爾富')q='萊爾富 '+n;else q='全家便利商店 '+n;
+  if(it.addr)q+=' '+it.addr;
+  return'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
+function toggle(it){it.done=!it.done;save();render()}
+function card(it){
+  var c=h('div','it'+(it.done?' done':'')),ck=h('button','ck',it.done?'✓':'');ck.title=it.done?'退回未完成':'標記完成';ck.onclick=function(){toggle(it)};
+  var b=h('div','bd');b.appendChild(h('div','nm',it.name));
+  var s=[it.chain||'全家',it.no,it.item].filter(Boolean).join(' ・ ');if(s)b.appendChild(h('div','sb',s));
+  if(it.addr)b.appendChild(h('div','sb','地址:'+it.addr));
+  if(it.note)b.appendChild(h('div','nt',it.note));
+  var a=h('div','acts'),m=h('a','ic','📍');m.href=mapUrl(it);m.target='_blank';m.rel='noopener';m.title='Google 地圖';
+  var e=h('button','ic','✎');e.title='編輯';e.onclick=function(){edit(it)};
+  a.appendChild(m);a.appendChild(e);
+  if(it.done){var u=h('button','ic','↩');u.title='退回未完成';u.onclick=function(){toggle(it)};a.appendChild(u)}
+  c.appendChild(ck);c.appendChild(b);c.appendChild(a);return c}
+function render(){
+  var today=ymd(new Date());out.textContent='';
+  document.getElementById('t1').className='tab'+(view==='day'?' on':'');
+  document.getElementById('t2').className='tab'+(view==='up'?' on':'');
+  document.getElementById('prev').hidden=document.getElementById('next').hidden=document.getElementById('today').hidden=(view!=='day');
+  if(view==='day'){
+    var L=items.filter(function(i){return i.date===cur}),T=L.filter(function(i){return!i.done}),D=L.filter(function(i){return i.done});
+    document.getElementById('dl').textContent=(cur===today?'今天 ':'')+lab(cur);
+    document.getElementById('prog').textContent=L.length?'已完成 '+D.length+' / '+L.length:'';
+    if(!L.length){var e=h('div','empty','這天沒有行程');var nx=items.map(function(i){return i.date}).filter(function(d){return d>cur}).sort()[0];
+      if(nx){var bt=h('button','','跳到下一個行程日 '+lab(nx));bt.style.marginTop='12px';bt.onclick=function(){cur=nx;render()};e.appendChild(document.createElement('br'));e.appendChild(bt)}out.appendChild(e);return}
+    out.appendChild(h('h2','','未完成('+T.length+')'));
+    if(!T.length)out.appendChild(h('div','empty','全部完成了 🎉'));
+    T.forEach(function(i){out.appendChild(card(i))});
+    out.appendChild(h('h2','','已完成('+D.length+')'));
+    D.forEach(function(i){out.appendChild(card(i))});
+  }else{
+    document.getElementById('dl').textContent='之後行程';document.getElementById('prog').textContent='';
+    var od=items.filter(function(i){return i.date<today&&!i.done});
+    if(od.length){out.appendChild(h('h2','warn','過期未完成('+od.length+')'));od.sort(function(a,b){return a.date<b.date?-1:1}).forEach(function(i){var w=h('div','sb','原定 '+lab(i.date));out.appendChild(w);out.appendChild(card(i))})}
+    var fu=items.filter(function(i){return i.date>=today}),ds=[];fu.forEach(function(i){if(ds.indexOf(i.date)<0)ds.push(i.date)});ds.sort();
+    if(!ds.length&&!od.length)out.appendChild(h('div','empty','沒有之後的行程'));
+    ds.forEach(function(d){var g=h('div','gh'),n=fu.filter(function(i){return i.date===d});g.appendChild(h('span','',lab(d)+(d===today?' 今天':'')+'・'+n.length+' 間'));
+      var go=h('button','','看當日');go.onclick=function(){cur=d;view='day';render()};g.appendChild(go);out.appendChild(g);n.forEach(function(i){out.appendChild(card(i))})});
+  }
+}
+function field(bx,label,type,val){bx.appendChild(h('label','',label));var i=document.createElement('input');i.type=type;i.value=val||'';bx.appendChild(i);return i}
+function edit(it){
+  var nw=!it,d=it||{name:'',no:'',item:'UPS機組',date:view==='day'?cur:ymd(new Date()),addr:'',note:''};
+  var bx=document.getElementById('bx');bx.textContent='';bx.appendChild(h('div','nm',nw?'新增行程':'編輯行程'));
+  bx.appendChild(h('label','','連鎖店'));var sel=document.createElement('select');CH.forEach(function(c){var o=document.createElement('option');o.textContent=o.value=c;sel.appendChild(o)});sel.value=d.chain||lastCh();bx.appendChild(sel);
+  var f1=field(bx,'店名','text',d.name),f2=field(bx,'店號(選填)','text',d.no),f3=field(bx,'項目','text',d.item),f4=field(bx,'日期','date',d.date),f5=field(bx,'地址(選填,有填地圖會用地址搜尋)','text',d.addr),f6=field(bx,'備註(選填)','text',d.note);
+  var bt=h('div','bt'),sv=h('button','pri','儲存'),cn=h('button','','取消');
+  sv.onclick=function(){if(!clean(f1.value)){alert('請輸入店名');return}if(!f4.value){alert('請選擇日期');return}
+    var o=nw?mk(f2.value,f1.value,f3.value,f4.value,sel.value):it;o.chain=sel.value;try{localStorage.setItem('chain1',sel.value)}catch(e){}o.name=clean(f1.value);o.no=clean(f2.value);o.item=clean(f3.value);o.date=f4.value;o.addr=clean(f5.value);o.note=clean(f6.value);
+    if(nw)items.push(o);save();document.getElementById('mod').hidden=true;if(view==='day')cur=o.date;render()};
+  cn.onclick=function(){document.getElementById('mod').hidden=true};
+  bt.appendChild(cn);if(!nw){var dl=h('button','del','刪除');dl.onclick=function(){if(confirm('確定刪除「'+it.name+'」?')){items=items.filter(function(x){return x!==it});save();document.getElementById('mod').hidden=true;render()}};bt.appendChild(dl)}
+  bt.appendChild(sv);bx.appendChild(bt);document.getElementById('mod').hidden=false}
+function loadX(cb){if(window.XLSX)return cb();var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';s.onload=cb;s.onerror=function(){say('無法載入 Excel 讀取元件,請確認網路')};document.head.appendChild(s)}
+function toDate(v){if(typeof v==='number'&&v<100000){var p=XLSX.SSF.parse_date_code(v);return p?p.y+'-'+p2(p.m)+'-'+p2(p.d):''}
+  var s=String(v||'').replace(/\D/g,'');return s.length===8?s.replace(/(\d{4})(\d\d)(\d\d)/,'$1-$2-$3'):''}
+document.getElementById('f').onchange=function(){var fl=this.files[0];if(!fl)return;var inp=this;
+  loadX(function(){var r=new FileReader();r.onload=function(){try{
+    var wb=XLSX.read(r.result,{type:'array'}),rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''}),add=0,skip=0;if(impClr){items=[];impClr=false}
+    rows.forEach(function(w){var name=clean(w['店名']),date=toDate(w['預定到店日期']);if(!name||!date){skip++;return}
+      var no=clean(w['店號']),item=clean(w['項目名稱'])||'UPS機組';
+      if(items.some(function(i){return i.name===name&&i.date===date&&i.item===item})){skip++;return}
+      items.push(mk(no,name,item,date,impCh));add++});
+    save();say('已匯入 '+add+' 筆'+(skip?',略過 '+skip+' 筆(重複或格式不符)':''));render()}catch(e){say('讀取失敗:'+e.message)}inp.value=''};r.readAsArrayBuffer(fl)})};
+document.getElementById('imp').onclick=function(){impClr=false;var bx=document.getElementById('bx');bx.textContent='';bx.appendChild(h('div','nm','匯入 Excel'));bx.appendChild(h('label','','這份行程是哪一家的店?'));
+  var sel=document.createElement('select');CH.forEach(function(c){var o=document.createElement('option');o.textContent=o.value=c;sel.appendChild(o)});sel.value='全家';bx.appendChild(sel);
+  var lb=h('label',''),cb=document.createElement('input');cb.type='checkbox';cb.style.cssText='width:auto;margin-right:6px';lb.appendChild(cb);lb.appendChild(document.createTextNode('匯入前先清空目前所有行程'));bx.appendChild(lb);
+  var bt=h('div','bt'),cn=h('button','','取消'),go=h('button','pri','選擇檔案');cn.onclick=function(){document.getElementById('mod').hidden=true};
+  go.onclick=function(){if(cb.checked&&!confirm('會刪除目前所有行程,確定嗎?'))return;impCh=sel.value;impClr=cb.checked;document.getElementById('mod').hidden=true;document.getElementById('f').click()};
+  bt.appendChild(cn);bt.appendChild(go);bx.appendChild(bt);document.getElementById('mod').hidden=false};
+document.getElementById('add').onclick=function(){edit(null)};
+document.getElementById('prev').onclick=function(){cur=shift(cur,-1);render()};
+document.getElementById('next').onclick=function(){cur=shift(cur,1);render()};
+document.getElementById('today').onclick=function(){cur=ymd(new Date());render()};
+document.getElementById('t1').onclick=function(){view='day';render()};
+document.getElementById('t2').onclick=function(){view='up';render()};
+cur=ymd(new Date());load();items.forEach(function(i){if(!i.chain)i.chain='全家'});render();
+})();
+</script>
+</body>
+</html>
